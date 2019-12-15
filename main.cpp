@@ -176,12 +176,11 @@ public:
 
 				{
 #ifdef Q_OS_WIN
-					BSTR name;
+					DLString name;
 					r = decklink->GetDisplayName(&name);
 					if (r == S_OK) {
-						devicename = QString::fromUtf16((ushort const *)name);
+						devicename = name;
 						deckLinkDeviceNames.push_back(devicename.toStdString());
-						SysFreeString(name);
 					}
 #else
 					dlstring_t name;
@@ -242,12 +241,11 @@ public:
 					IDeckLinkDisplayMode *displayMode = nullptr;
 					while (displayModeIterator->Next(&displayMode) == S_OK) {
 #ifdef Q_OS_WIN
-						BSTR displayModeName;
+						DLString displayModeName;
 						HRESULT result = displayMode->GetName(&displayModeName);
 						std::string name;
 						if (result == S_OK) {
-							name = QString::fromUtf16((ushort const *)displayModeName).toStdString();
-							SysFreeString(displayModeName);
+							name = displayModeName;
 						}
 						dispmodes.emplace_back(displayMode, name);
 #else

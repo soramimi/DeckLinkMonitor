@@ -2,10 +2,40 @@
 #define DECKLINKAPI_H
 
 #include <QMetaType>
+#include <QString>
 
 #if defined(Q_OS_WIN)
 #include "sdk/Win/DeckLinkAPI_h.h"
 typedef IID CFUUIDBytes;
+
+class DLString {
+private:
+#ifdef Q_OS_WIN
+	BSTR str = nullptr;
+#else
+	dlstring_t str = nullptr;
+#endif
+public:
+	~DLString();
+	void clear();
+#ifdef Q_OS_WIN
+	BSTR *operator & ()
+	{
+		return &str;
+	}
+	operator QString ()
+	{
+		return str ? QString::fromUtf16((ushort const *)str) : QString();
+	}
+	operator std::string ()
+	{
+		return operator QString ().toStdString();
+	}
+#else
+#endif
+};
+
+
 #elif defined(Q_OS_MACX)
 #include "sdk/Mac/include/DeckLinkAPI.h"
 typedef bool BOOL;
