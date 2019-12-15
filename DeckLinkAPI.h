@@ -2,28 +2,19 @@
 #define DECKLINKAPI_H
 
 #include "DeckLinkAPI.h"
-#include <QString>
-
-
-#ifdef Q_OS_WIN
-typedef BOOL dlbool_t;
-#else
-typedef bool dlbool_t;
-//typedef const char *dlstring_t;
-#endif
-
-
 #include <QMetaType>
 #include <QString>
 
 #if defined(Q_OS_WIN)
+#include <Windows.h>
 #include "sdk/Win/DeckLinkAPI_h.h"
+typedef BOOL dlbool_t;
 typedef IID CFUUIDBytes;
 
 
 #elif defined(Q_OS_MACX)
 #include "sdk/Mac/include/DeckLinkAPI.h"
-typedef bool BOOL;
+typedef bool dlbool_t;
 typedef CFStringRef BSTR;
 
 static inline QString toQString(CFStringRef str)
@@ -37,9 +28,9 @@ static inline QString toQString(CFStringRef str)
 }
 
 #else
+
 #include "sdk/Linux/include/DeckLinkAPI.h"
-typedef bool BOOL;
-//typedef char *BSTR;
+typedef bool dlbool_t;
 #endif
 
 class DLString {

@@ -18,11 +18,10 @@ HRESULT GetDeckLinkIterator(IDeckLinkIterator **deckLinkIterator)
 	}
 #endif
 
-
 	return result;
 }
 
-//
+// DLString
 
 DLString::~DLString()
 {

@@ -195,7 +195,7 @@ public:
 		// Configuration flags
 		bool err = false;
 
-		const int deckLinkIndex = 1;
+		int deckLinkIndex = -1;
 		const int displayModeIndex = 8;
 
 		BMDDisplayMode selectedDisplayMode = bmdModeNTSC;
@@ -209,10 +209,10 @@ public:
 			if (result != S_OK) return false;
 		}
 
-		if (deckLinkIndex < 0) {
-			fprintf(stderr, "You must select a device\n");
-			err = true;
-		}
+//		if (deckLinkIndex < 0) {
+//			fprintf(stderr, "You must select a device\n");
+//			err = true;
+//		}
 
 		// Obtain the required DeckLink device
 
@@ -227,51 +227,46 @@ public:
 				QString devicename;
 
 				{
-#ifdef Q_OS_WIN
-					DLString name;
-					r = decklink->GetDisplayName(&name);
-					if (r == S_OK) {
-						devicename = name;
-						deckLinkDeviceNames.push_back(devicename.toStdString());
-					}
-#else
 					DLString name;
 					r = decklink->GetDisplayName(&name);
 					if (r == S_OK) {
 						devicename = name;
 						deckLinkDeviceNames.push_back(name);
 					}
-#endif
 				}
 
-				if (index == deckLinkIndex) {
-					// Check that selected device supports playback
-					int64_t ioSupportAttribute = 0;
-					{
-						IDeckLinkProfileAttributes *atts = nullptr;
-						r = decklink->QueryInterface(IID_IDeckLinkProfileAttributes, (void **)&atts);
-						if (r != S_OK) {
-							fprintf(stderr, "Unable to get IDeckLinkAttributes interface\n");
-							return false;
-						}
-
-						if (atts->GetInt(BMDDeckLinkVideoIOSupport, &ioSupportAttribute) != S_OK) {
-							ioSupportAttribute = 0;
-						}
-
-						atts->Release();
+				int64_t ioSupportAttribute = 0;
+				{
+					IDeckLinkProfileAttributes *atts = nullptr;
+					r = decklink->QueryInterface(IID_IDeckLinkProfileAttributes, (void **)&atts);
+					if (r != S_OK) {
+						fprintf(stderr, "Unable to get IDeckLinkAttributes interface\n");
+						return false;
 					}
 
-					if (ioSupportAttribute & bmdDeviceSupportsPlayback) {
+					if (atts->GetInt(BMDDeckLinkVideoIOSupport, &ioSupportAttribute) != S_OK) {
+						ioSupportAttribute = 0;
+					}
+
+					atts->Release();
+				}
+
+				if (ioSupportAttribute & bmdDeviceSupportsPlayback) {
+					deckLinkIndex = index;
+//				}
+//				if (index == deckLinkIndex) {
+					// Check that selected device supports playback
+
+//					if (ioSupportAttribute & bmdDeviceSupportsPlayback) {
 						r = decklink->QueryInterface(IID_IDeckLinkOutput, (void **)&selectedDeckLinkOutput);
 						if (r != S_OK) {
 							fprintf(stderr, "Unable to get IDeckLinkOutput interface\n");
 							return false;
 						}
-					} else {
-						fprintf(stderr, "Selected device does not support playback\n");
-						err = true;
-					}
+//					} else {
+//						fprintf(stderr, "Selected device does not support playback\n");
+//						err = true;
+//					}
 				}
 				index++;
 
@@ -291,7 +286,6 @@ public:
 				{
 					IDeckLinkDisplayMode *displayMode = nullptr;
 					while (displayModeIterator->Next(&displayMode) == S_OK) {
-#ifdef Q_OS_WIN
 						DLString displayModeName;
 						HRESULT result = displayMode->GetName(&displayModeName);
 						std::string name;
@@ -299,15 +293,6 @@ public:
 							name = displayModeName;
 						}
 						dispmodes.emplace_back(displayMode, name);
-#else
-						DLString displayModeName;
-						HRESULT result = displayMode->GetName(&displayModeName);
-						std::string name;
-						if (result == S_OK) {
-							name = displayModeName;
-						}
-						dispmodes.emplace_back(displayMode, name);
-#endif
 					}
 				}
 				displayModeIterator->Release();
@@ -327,11 +312,7 @@ public:
 
 				// Check display mode is supported with given options
 				// Passing pixel format = 0 to represent any pixel format
-#ifdef Q_OS_WIN
-				BOOL dispmodesupported;
-#else
 				dlbool_t dispmodesupported;
-#endif
 				HRESULT result = selectedDeckLinkOutput->DoesSupportVideoMode(bmdVideoConnectionUnspecified, selectedDisplayMode, bmdFormatUnspecified, bmdSupportedVideoModeDefault, nullptr, &dispmodesupported);
 				if (result != S_OK || !dispmodesupported) {
 					fprintf(stderr, "The display mode %s is not supported by device\n", selectedDisplayModeName.c_str());
