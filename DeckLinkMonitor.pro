@@ -6,7 +6,11 @@ QT += core gui widgets
 
 CONFIG += c++11
 
+DESTDIR = $$PWD/_bin
+
 linux:LIBS += -ldl
+win32:LIBS += -lole32 -loleaut32
+macx:LIBS += -framework CoreFoundation
 
 SOURCES += \
         MainWindow.cpp \

@@ -67,7 +67,8 @@ public:
 				if (1) {
 					if (1) {
 						QImage img;
-						img.load("/home/soramimi/a/example.png");
+//						img.load("/home/soramimi/a/example.png");
+						img.load("../lena_std.png");
 						int img_w = img.width();
 						int img_h = img.height();
 						int x = (frame_w - img_w) / 2;
@@ -142,7 +143,7 @@ public:
 		// Configuration flags
 		bool err = false;
 
-		const int deckLinkIndex = 1;
+		const int deckLinkIndex = 0;
 		const int displayModeIndex = 8;
 
 		BMDDisplayMode selectedDisplayMode = bmdModeNTSC;
@@ -174,6 +175,15 @@ public:
 				QString devicename;
 
 				{
+#ifdef Q_OS_WIN
+					BSTR name;
+					r = decklink->GetDisplayName(&name);
+					if (r == S_OK) {
+						devicename = QString::fromUtf16((ushort const *)name);
+						deckLinkDeviceNames.push_back(devicename.toStdString());
+						SysFreeString(name);
+					}
+#else
 					dlstring_t name;
 					r = decklink->GetDisplayName(&name);
 					if (r == S_OK) {
@@ -181,6 +191,7 @@ public:
 						deckLinkDeviceNames.push_back(DlToStdString(name));
 						DeleteString(name);
 					}
+#endif
 				}
 
 				if (index == deckLinkIndex) {
@@ -230,6 +241,16 @@ public:
 				{
 					IDeckLinkDisplayMode *displayMode = nullptr;
 					while (displayModeIterator->Next(&displayMode) == S_OK) {
+#ifdef Q_OS_WIN
+						BSTR displayModeName;
+						HRESULT result = displayMode->GetName(&displayModeName);
+						std::string name;
+						if (result == S_OK) {
+							name = QString::fromUtf16((ushort const *)displayModeName).toStdString();
+							SysFreeString(displayModeName);
+						}
+						dispmodes.emplace_back(displayMode, name);
+#else
 						dlstring_t displayModeName;
 						HRESULT result = displayMode->GetName(&displayModeName);
 						std::string name;
@@ -238,6 +259,7 @@ public:
 							DeleteString(displayModeName);
 						}
 						dispmodes.emplace_back(displayMode, name);
+#endif
 					}
 				}
 				displayModeIterator->Release();
@@ -257,7 +279,11 @@ public:
 
 				// Check display mode is supported with given options
 				// Passing pixel format = 0 to represent any pixel format
+#ifdef Q_OS_WIN
+				BOOL dispmodesupported;
+#else
 				dlbool_t dispmodesupported;
+#endif
 				HRESULT result = selectedDeckLinkOutput->DoesSupportVideoMode(bmdVideoConnectionUnspecified, selectedDisplayMode, bmdFormatUnspecified, bmdSupportedVideoModeDefault, nullptr, &dispmodesupported);
 				if (result != S_OK || !dispmodesupported) {
 					fprintf(stderr, "The display mode %s is not supported by device\n", selectedDisplayModeName.c_str());
@@ -352,6 +378,10 @@ public:
 
 int main(int argc, char *argv[])
 {
+#ifdef Q_OS_WIN
+	CoInitialize(nullptr);
+#endif
+
 	QApplication a(argc, argv);
 	MainWindow w;
 	w.show();
@@ -362,6 +392,10 @@ int main(int argc, char *argv[])
 	int r = a.exec();
 
 	dlm.stop();
+
+#ifdef Q_OS_WIN
+	CoUninitialize();
+#endif
 
 	return r;
 }
