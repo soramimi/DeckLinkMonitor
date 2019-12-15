@@ -15,13 +15,11 @@ macx:LIBS += -framework CoreFoundation
 SOURCES += \
         MainWindow.cpp \
         main.cpp \
-        platform.cpp \
     DeckLinkAPI.cpp
 
 HEADERS += \
         DeckLinkAPI.h \
-        MainWindow.h \
-        platform.h
+        MainWindow.h
 
 FORMS += \
         MainWindow.ui

@@ -1,39 +1,24 @@
 #ifndef DECKLINKAPI_H
 #define DECKLINKAPI_H
 
+#include "DeckLinkAPI.h"
+#include <QString>
+
+
+#ifdef Q_OS_WIN
+typedef BOOL dlbool_t;
+#else
+typedef bool dlbool_t;
+//typedef const char *dlstring_t;
+#endif
+
+
 #include <QMetaType>
 #include <QString>
 
 #if defined(Q_OS_WIN)
 #include "sdk/Win/DeckLinkAPI_h.h"
 typedef IID CFUUIDBytes;
-
-class DLString {
-private:
-#ifdef Q_OS_WIN
-	BSTR str = nullptr;
-#else
-	dlstring_t str = nullptr;
-#endif
-public:
-	~DLString();
-	void clear();
-#ifdef Q_OS_WIN
-	BSTR *operator & ()
-	{
-		return &str;
-	}
-	operator QString ()
-	{
-		return str ? QString::fromUtf16((ushort const *)str) : QString();
-	}
-	operator std::string ()
-	{
-		return operator QString ().toStdString();
-	}
-#else
-#endif
-};
 
 
 #elif defined(Q_OS_MACX)
@@ -54,7 +39,48 @@ static inline QString toQString(CFStringRef str)
 #else
 #include "sdk/Linux/include/DeckLinkAPI.h"
 typedef bool BOOL;
-typedef char *BSTR;
+//typedef char *BSTR;
 #endif
+
+class DLString {
+private:
+#ifdef Q_OS_WIN
+	BSTR str = nullptr;
+#else
+	char const *str = nullptr;
+#endif
+public:
+	~DLString();
+	void clear();
+#ifdef Q_OS_WIN
+	BSTR *operator & ()
+	{
+		return &str;
+	}
+	operator QString ()
+	{
+		return str ? QString::fromUtf16((ushort const *)str) : QString();
+	}
+	operator std::string ()
+	{
+		return operator QString ().toStdString();
+	}
+#else
+	char const **operator & ()
+	{
+		return &str;
+	}
+	operator QString ()
+	{
+		return str ? QString::fromUtf8(str) : QString();
+	}
+	operator std::string ()
+	{
+		return str ? std::string(str) : std::string();
+	}
+#endif
+};
+
+HRESULT GetDeckLinkIterator(IDeckLinkIterator **deckLinkIterator);
 
 #endif // DECKLINKAPI_H

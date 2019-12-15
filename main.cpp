@@ -33,12 +33,13 @@
 #include <chrono>
 #include <mutex>
 #include <condition_variable>
-#include "platform.h"
+//#include "platform.h"
 #include "DeckLinkAPI.h"
 #include "MainWindow.h"
 #include <QApplication>
 #include <QDebug>
 #include <QPainter>
+#include <QThread>
 
 
 class DeckLinkMonitor {
@@ -54,43 +55,94 @@ public:
 		std::chrono::milliseconds timer_period(update_interval_ms);
 		unsigned int frame_count = 0;
 
+		int frame_w = playback_frame->GetWidth();
+		int frame_h = playback_frame->GetHeight();
+		QImage image(frame_w, frame_h, QImage::Format_RGB32);
+
 		while (1) {
 			{
-				int frame_w = playback_frame->GetWidth();
-				int frame_h = playback_frame->GetHeight();
-				QImage image(frame_w, frame_h, QImage::Format_RGB32);
-				if (frame_count & 1) {
-					image.fill(Qt::blue);
-				} else {
-					image.fill(Qt::black);
-				}
-				if (1) {
+				{
+					QPainter pr(&image);
+					QPainterPath path;
+					QRect r(0, 0, frame_w, frame_h);
+					path.addRect(r);
+					{
+						int margin = 16;
+						r.adjust(margin, margin, -margin, -margin);
+						static QRgb colors[] = {
+							qRgb(255, 255, 255), qRgb(255, 255, 0), qRgb(0, 255, 255), qRgb(0, 255, 0),
+							qRgb(255, 0, 255), qRgb(255, 0, 0), qRgb(0, 0, 255), qRgb(0, 0, 0),
+						};
+						{
+							int x0 = r.x();
+							for (int i = 0; i < 8; i++) {
+								int x1 = r.x() + r.width() * (i + 1) / 8;
+								pr.fillRect(x0, r.y(), x1 - x0, r.height(), colors[i]);
+								x0 = x1;
+							}
+						}
+						{
+							int x0 = r.x();
+							for (int i = 0; i < 256; i++) {
+								int x1 = r.x() + r.width() * (i + 1) / 256;
+								int h = 200;
+								pr.fillRect(x0, r.y() + (r.height() - h) / 2, x1 - x0, h, QColor(i, i, i));
+								x0 = x1;
+							}
+						}
+						QPainterPath path2;
+						path2.addRect(r);
+						path = path.subtracted(path2);
+					}
+					{
+						pr.save();
+						static uint8_t pattern[] = {
+							0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00,
+							0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff,
+							0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff,
+							0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff,
+							0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff,
+							0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0x00,
+							0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00,
+							0x00, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00,
+							0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00,
+							0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff,
+							0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff,
+							0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff,
+							0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff,
+							0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0x00,
+							0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00,
+							0x00, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00,
+						};
+						pr.setClipPath(path);
+						QImage img(pattern + (~frame_count & 7) * 8, 8, 8, QImage::Format_Grayscale8);
+						QRect r(0, 0, frame_w, frame_h);
+						pr.fillRect(r, QBrush(img));
+						pr.restore();
+					}
 					if (1) {
 						QImage img;
-//						img.load("/home/soramimi/a/example.png");
+						//						img.load("/home/soramimi/a/example.png");
 						img.load("../lena_std.png");
 						int img_w = img.width();
 						int img_h = img.height();
 						int x = (frame_w - img_w) / 2;
 						int y = (frame_h - img_h) / 2;
-						QPainter pr(&image);
 						pr.drawImage(x, y, img);
 					}
-					uint8_t *bits = nullptr;
-					if (playback_frame->GetBytes((void**)&bits) == S_OK && bits) {
-						int stride = playback_frame->GetRowBytes();
-						for (int y = 0; y < frame_h; y++) {
-							uint8_t *dst = bits + stride * y;
-							uint8_t *src = image.scanLine(y);
-							for (int x = 0; x < frame_w; x++) {
-								memcpy(dst, src, frame_w * 4);
-							}
-						}
+				}
+				uint8_t *bits = nullptr;
+				if (playback_frame->GetBytes((void**)&bits) == S_OK && bits) {
+					int stride = playback_frame->GetRowBytes();
+					for (int y = 0; y < frame_h; y++) {
+						uint8_t *dst = bits + stride * y;
+						uint8_t *src = image.scanLine(y);
+						memcpy(dst, src, frame_w * 4);
 					}
 				}
 			}
 
-			{
+			if (1) {
 				HRESULT result = decklink_output->DisplayVideoFrameSync(playback_frame);
 				if (result != S_OK) {
 					qDebug() << "Unable to display video output\n";
@@ -143,7 +195,7 @@ public:
 		// Configuration flags
 		bool err = false;
 
-		const int deckLinkIndex = 0;
+		const int deckLinkIndex = 1;
 		const int displayModeIndex = 8;
 
 		BMDDisplayMode selectedDisplayMode = bmdModeNTSC;
@@ -183,12 +235,11 @@ public:
 						deckLinkDeviceNames.push_back(devicename.toStdString());
 					}
 #else
-					dlstring_t name;
+					DLString name;
 					r = decklink->GetDisplayName(&name);
 					if (r == S_OK) {
 						devicename = name;
-						deckLinkDeviceNames.push_back(DlToStdString(name));
-						DeleteString(name);
+						deckLinkDeviceNames.push_back(name);
 					}
 #endif
 				}
@@ -249,12 +300,11 @@ public:
 						}
 						dispmodes.emplace_back(displayMode, name);
 #else
-						dlstring_t displayModeName;
+						DLString displayModeName;
 						HRESULT result = displayMode->GetName(&displayModeName);
 						std::string name;
 						if (result == S_OK) {
-							name = DlToStdString(displayModeName);
-							DeleteString(displayModeName);
+							name = displayModeName;
 						}
 						dispmodes.emplace_back(displayMode, name);
 #endif
@@ -332,7 +382,7 @@ public:
 		// Start thread for message processing
 		playbackStillsThread = std::thread([&]{
 			running = true;
-			int interval_ms = 500;
+			int interval_ms = 1;
 			PlaybackStills(selectedDeckLinkOutput, (IDeckLinkVideoFrame *)playbackFrame, interval_ms);
 		});
 
