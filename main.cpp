@@ -312,7 +312,7 @@ public:
 
 				// Check display mode is supported with given options
 				// Passing pixel format = 0 to represent any pixel format
-				dlbool_t dispmodesupported;
+				BOOL dispmodesupported;
 				HRESULT result = selectedDeckLinkOutput->DoesSupportVideoMode(bmdVideoConnectionUnspecified, selectedDisplayMode, bmdFormatUnspecified, bmdSupportedVideoModeDefault, nullptr, &dispmodesupported);
 				if (result != S_OK || !dispmodesupported) {
 					fprintf(stderr, "The display mode %s is not supported by device\n", selectedDisplayModeName.c_str());
