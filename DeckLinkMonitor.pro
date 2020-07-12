@@ -11,15 +11,20 @@ DESTDIR = $$PWD/_bin
 linux:LIBS += -ldl
 win32:LIBS += -lole32 -loleaut32
 macx:LIBS += -framework CoreFoundation
+LIBS += -lavdevice -lavformat -lavfilter -lavcodec -lswresample -lswscale -lavutil
 
 SOURCES += \
+	DeckLinkMonitor.cpp \
         MainWindow.cpp \
+	VideoDecoder.cpp \
         main.cpp \
     DeckLinkAPI.cpp
 
 HEADERS += \
         DeckLinkAPI.h \
-        MainWindow.h
+        DeckLinkMonitor.h \
+        MainWindow.h \
+        VideoDecoder.h
 
 FORMS += \
         MainWindow.ui
