@@ -1,6 +1,8 @@
 #ifndef VIDEODECODER_H
 #define VIDEODECODER_H
 
+#include "Image.h"
+
 #include <QImage>
 #include <QMetaType>
 #include <QObject>
@@ -14,8 +16,8 @@ extern "C" {
 
 class Frame {
 public:
-	QImage image;
-	void setOriginalImage(QImage const &image)
+	Image image;
+	void setOriginalImage(Image const &image)
 	{
 		this->image = image;
 	}

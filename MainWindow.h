@@ -25,7 +25,7 @@ public:
 	~MainWindow();
 
 private:
-	void putFrame(const QImage &image);
+	void putFrame(const Image &image);
 };
 
 #endif // MAINWINDOW_H

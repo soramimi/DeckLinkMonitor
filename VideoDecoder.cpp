@@ -1,4 +1,5 @@
 
+#include "ImageUtil.h"
 #include "VideoDecoder.h"
 #include <cmath>
 #include <QDateTime>
@@ -82,7 +83,7 @@ void VideoDecoder::open(QString const &filename)
 		if (ret < 0) throw "avcodec_open2";
 
 		m->sws_context = sws_getContext(m->codec_context->width, m->codec_context->height, m->codec_context->pix_fmt,
-										m->dest_width, m->dest_height, AV_PIX_FMT_RGB24,
+										m->dest_width, m->dest_height, AV_PIX_FMT_YUYV422,
 										SWS_BICUBIC, nullptr, nullptr, nullptr);
 
 		if (!m->sws_context) throw "sws_getContext returns null";
@@ -192,7 +193,7 @@ FramePtr VideoDecoder::nextFrame()
 			if (ret >= 0) {
 				m->position.position = av_frame->pts; // 現在位置
 				// 画像を取得
-				QImage image(m->dest_width, m->dest_height, QImage::Format_RGB888);
+				Image image(m->dest_width, m->dest_height, Image::Format::YUYV8);
 				uint8_t *data[] = { image.bits() };
 				int linesize[] = { image.bytesPerLine() };
 

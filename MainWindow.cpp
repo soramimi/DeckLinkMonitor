@@ -1,3 +1,4 @@
+#include "ImageUtil.h"
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 
@@ -25,8 +26,9 @@ void MainWindow::receiveFrame(FramePtr frame)
 	putFrame(frame->image);
 }
 
-void MainWindow::putFrame(QImage const &image)
+void MainWindow::putFrame(Image const &image)
 {
-	dlm.putFrame(image.convertToFormat(QImage::Format_RGB32));
+	QImage img = ImageUtil::qimage(image).convertToFormat(QImage::Format_RGB32);
+	dlm.putFrame(img);
 
 }

@@ -15,6 +15,8 @@ LIBS += -lavdevice -lavformat -lavfilter -lavcodec -lswresample -lswscale -lavut
 
 SOURCES += \
 	DeckLinkMonitor.cpp \
+	Image.cpp \
+	ImageUtil.cpp \
         MainWindow.cpp \
 	VideoDecoder.cpp \
         main.cpp \
@@ -23,6 +25,8 @@ SOURCES += \
 HEADERS += \
         DeckLinkAPI.h \
         DeckLinkMonitor.h \
+        Image.h \
+        ImageUtil.h \
         MainWindow.h \
         VideoDecoder.h
 
