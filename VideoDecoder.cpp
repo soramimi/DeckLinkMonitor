@@ -148,6 +148,8 @@ void VideoDecoder::doEndOfFile()
 	// ビデオの終端に達した
 	m->status = VideoStatus::EndOfFile;
 	m->position.position = m->position.duration; // 現在位置を終了位置に合わせる
+
+	seek(0, true);
 //	emit endOfFile(); // 再生情報表示を更新する
 }
 

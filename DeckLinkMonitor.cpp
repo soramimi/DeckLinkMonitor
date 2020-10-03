@@ -187,6 +187,13 @@ bool DeckLinkMonitor::start()
 		}
 	}
 
+	{
+		IDeckLinkConfiguration *config = nullptr;
+		if (decklink_->QueryInterface(IID_IDeckLinkConfiguration, (void **)&config) == S_OK && config) {
+			config->SetFlag(bmdDeckLinkConfigFieldFlickerRemoval, false);
+		}
+	}
+
 	// OK to start playback - print configuration
 	fprintf(stderr, "Output with the following configuration:\n"
 					" - Playback device: %s\n"
