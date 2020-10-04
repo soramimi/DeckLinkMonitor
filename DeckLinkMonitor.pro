@@ -11,7 +11,11 @@ DESTDIR = $$PWD/_bin
 linux:LIBS += -ldl
 win32:LIBS += -lole32 -loleaut32
 macx:LIBS += -framework CoreFoundation
-LIBS += -lavdevice -lavformat -lavfilter -lavcodec -lswresample -lswscale -lavutil
+unix:LIBS += -lavdevice -lavformat -lavfilter -lavcodec -lswresample -lswscale -lavutil
+
+win32:INCLUDEPATH += "C:/Program Files/ffmpeg-4.2-25-lgpl21-x64-windows/installed/x64-windows/include"
+win32:LIBS += "-LC:/Program Files/ffmpeg-4.2-25-lgpl21-x64-windows/installed/x64-windows/lib"
+win32:LIBS += -lavcodec -lavdevice -lavfilter -lavformat -lavutil -lbz2 -llibcharset -llibiconv -llzma -lopus -lsnappy -lsoxr -lswresample -lswscale -lvpxmd -lwavpackdll -lzlib
 
 SOURCES += \
 	DeckLinkMonitor.cpp \

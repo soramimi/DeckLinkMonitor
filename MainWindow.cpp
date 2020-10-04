@@ -11,7 +11,11 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->setupUi(this);
 
 	connect(&video_decoder_, &VideoDecoder::receiveFrame, this, &MainWindow::receiveFrame);
+#ifdef _WIN32
+	video_decoder_.open("Z:/video/a.avi");
+#else
 	video_decoder_.open("/home/soramimi/a.avi");
+#endif
 	video_decoder_.start();
 }
 
