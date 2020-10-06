@@ -16,7 +16,7 @@ Image Image::convertToFormat(Image::Format dformat) const
 	const int w = width();
 	const int h = height();
 
-	if ((sformat == Format::UYUV8 && dformat == Format::YUYV8) || (sformat == Format::YUYV8 && dformat == Format::UYUV8)) {
+	if ((sformat == Format::UYVY8 && dformat == Format::YUYV8) || (sformat == Format::YUYV8 && dformat == Format::UYVY8)) {
 		Image newimage = *this;
 		newimage.copy_on_write();
 		newimage.core_->format = dformat;
@@ -32,7 +32,7 @@ Image Image::convertToFormat(Image::Format dformat) const
 	}
 
 	if (dformat == Format::RGB8) {
-		if (sformat == Format::UYUV8) {
+		if (sformat == Format::UYVY8) {
 			Image newimage(w, h, dformat);
 			for (int y = 0; y < h; y++) {
 				uint8_t const *s = scanLine(y);
@@ -87,13 +87,8 @@ Image Image::convertToFormat(Image::Format dformat) const
 			for (int y = 0; y < h; y++) {
 				uint8_t const *s = scanLine(y);
 				uint8_t *d = newimage.scanLine(y);
-				uint8_t U, V;
-				U = V = 0;
 				for (int x = 0; x < w; x++) {
-					uint8_t Y = *s++;
-					d[0] = Y;
-					d[1] = Y;
-					d[2] = Y;
+					d[0] = d[1] = d[2] = *s++;
 					d += 3;
 				}
 			}
@@ -117,7 +112,7 @@ Image Image::convertToFormat(Image::Format dformat) const
 			}
 			return newimage;
 		}
-		if (sformat == Format::UYUV8) {
+		if (sformat == Format::UYVY8) {
 			Image newimage(w, h, dformat);
 			for (int y = 0; y < h; y++) {
 				uint8_t const *s = scanLine(y);
@@ -143,7 +138,7 @@ Image Image::convertToFormat(Image::Format dformat) const
 		}
 	}
 
-	if (dformat == Format::UYUV8) {
+	if (dformat == Format::UYVY8) {
 		if (sformat == Format::RGB8) {
 			Image newimage(w, h, dformat);
 			for (int y = 0; y < h; y++) {

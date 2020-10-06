@@ -10,7 +10,7 @@ public:
 	enum class Format {
 		None,
 		RGB8,
-		UYUV8,
+		UYVY8,
 		YUYV8,
 		UINT8,
 		UINT16,
@@ -23,7 +23,7 @@ public:
 			return 1;
 		case Format::RGB8:
 			return 3;
-		case Format::UYUV8:
+		case Format::UYVY8:
 		case Format::YUYV8:
 		case Format::UINT16:
 			return 2;
@@ -38,7 +38,11 @@ private:
 		int width = 0;
 		int height = 0;
 		enum Format format = Format::RGB8;
-		char data[0];
+		char *data() const
+		{
+			return (char *)this + sizeof(Core);
+		}
+//		char data[0];
 	};
 	Core *core_ = nullptr;
 	void assign(Core *p)
@@ -59,7 +63,8 @@ private:
 	void copy_on_write()
 	{
 		if (core_ && core_->ref > 1) {
-			assign(copy().core_);
+			Image img = copy();
+			assign(img.core_);
 		}
 	}
 public:
@@ -68,12 +73,7 @@ public:
 	}
 	Image(int w, int h, Format format)
 	{
-		size_t datalen = bytesPerPixel(format) * w * h;
-		Core *p = (Core *)malloc(sizeof(Core) + datalen);
-		p->width = w;
-		p->height = h;
-		p->format = format;
-		assign(p);
+		create(w, h, format);
 	}
 	~Image()
 	{
@@ -94,6 +94,20 @@ public:
 	bool isNull() const
 	{
 		return !core_;
+	}
+	operator bool () const
+	{
+		return !isNull();
+	}
+	void create(int w, int h, Format format)
+	{
+		size_t datalen = bytesPerPixel(format) * w * h;
+		Core *p = (Core *)malloc(sizeof(Core) + datalen);
+		*p = {};
+		p->width = w;
+		p->height = h;
+		p->format = format;
+		assign(p);
 	}
 	int width() const
 	{
@@ -117,32 +131,31 @@ public:
 	}
 	uint8_t const *scanLine(int y) const
 	{
-		return core_ ? ((uint8_t const *)core_->data + bytesPerLine() * y) : nullptr;
+		return core_ ? ((uint8_t const *)core_->data() + bytesPerLine() * y) : nullptr;
 	}
 	uint8_t *scanLine(int y)
 	{
 		copy_on_write();
-		return core_ ? ((uint8_t *)core_->data + bytesPerLine() * y) : nullptr;
+		return core_ ? ((uint8_t *)core_->data() + bytesPerLine() * y) : nullptr;
 	}
 	uint8_t const *bits() const
 	{
-		return core_ ? (uint8_t const *)core_->data : nullptr;
+		return core_ ? (uint8_t const *)core_->data() : nullptr;
 	}
 	uint8_t *bits()
 	{
 		copy_on_write();
-		return core_ ? (uint8_t *)core_->data : nullptr;
+		return core_ ? (uint8_t *)core_->data() : nullptr;
 	}
 	Image copy() const
 	{
 		Image newimg;
 		if (core_) {
-			size_t datalen = bytesPerLine() * height();
-			Core *p = (Core *)malloc(sizeof(Core) + datalen);
-			*p = *core_;
-			p->ref = 0;
-			memcpy(p->data, core_->data, datalen);
-			newimg.assign(p);
+			int w = width();
+			int h = height();
+			Format f = format();
+			newimg.create(w, h, f);
+			memcpy(newimg.core_->data(), core_->data(), bytesPerPixel(f) * w * h);
 		}
 		return newimg;
 	}
